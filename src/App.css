@@ -1,0 +1,387 @@
+/* src/App.css */
+/*made the functional button of input hidden so it won't show up*/
+.hidden{
+  visibility: hidden;
+}
+.app-container {
+  padding: 1.5rem;
+  max-width: 80rem;
+  margin: 0 auto;
+  background-color: #f9fafb;
+  min-height: 100vh;
+}
+
+/*lining up the two headers of color white into the center*/
+.header-section {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.header-section h1 {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: white;
+  margin-bottom: 0.75rem;
+}
+
+.header-section p {
+  font-size: 1.125rem;
+  color: white;
+  max-width: 48rem;
+  margin: 0 auto;
+  letter-spacing: -0.025em;
+}
+
+.import-button-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 3.5rem;
+}
+
+.import-button {
+  background: linear-gradient(to right, #10b981, #059669);
+  color: white;
+  font-weight: 700;
+  padding: 1rem 4rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.import-button:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 15px 20px -4px #0cc06ca6;
+}
+
+/* Error Modal */
+.error-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 1rem;
+}
+
+.error-modal {
+  background: rgba(238, 76, 76, 0.81);
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 20px 25px -5px rgba(174, 42, 42, 0.628);
+  width: 100%;
+  max-width: 32rem;
+}
+
+.error-modal-header {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 1.25rem;
+}
+
+.error-icon {
+  background-color: #fee2e2;
+  border-radius: 9999px;
+  padding: 0.75rem;
+  margin-right: 1rem;
+  flex-shrink: 0;
+}
+
+.error-svg {
+  width: 2rem;
+  height: 2rem;
+  color: #ef4444;
+}
+
+.error-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 0.25rem;
+}
+
+.error-message {
+  color: white;
+  line-height: 2.6;
+}
+
+.error-close-button {
+  width: 100%;
+  background-color: #ef4444;
+  color: white;
+  font-weight: 700;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.error-close-button:hover{
+  color: #ef4444;
+  background-color: rgb(31, 3, 3);
+  transition: background-color 0.2s;
+}
+
+
+/* File Info Section */
+.file-info-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4rem;
+}
+
+.file-summary-card {
+  background: linear-gradient(to right, #eff6ff, #e0f2fe);
+  border: 1px solid #bfdbfe;
+  border-radius: 1rem;
+  padding: 1.5rem;
+}
+
+.file-summary-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1d4ed8;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.file-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.stat-card {
+  background: white;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+.stat-card:hover {
+  transition: ease-in 0.3s;
+  background-color: #10b981;
+  color : white;
+}
+.stat-card:hover .stat-label,
+.stat-card:hover .stat-value {
+  color: white;
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+}
+
+.stat-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* Tables */
+.projects-table-container,
+.selected-projects-container {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.table-header {
+  background-color: #f3f4f6;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.table-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+  display: flex;
+  align-items: center;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.projects-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table-head-cell {
+  padding: 0.75rem 1rem;
+  text-align:left;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #374151;
+  background-color: #f9fafb;
+  ;
+}
+
+
+.description-column {
+  color: #dc2626;
+}
+
+.table-row {
+  transition: background-color 0.15s;
+}
+
+.table-row:hover {
+  background-color: #f9fafb;
+}
+
+.table-cell {
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: #111827;
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.select-checkbox {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 0.375rem;
+  accent-color: #2563eb;
+}
+
+/* Export Section */
+.export-section {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.export-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.export-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .export-cards-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.export-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  transition: box-shadow 0.3s;
+}
+
+.export-card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.excel-card {
+  background-color: #f0f9ff;
+}
+
+.word-card {
+  background-color: #f5f3ff;
+}
+
+.export-card-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.export-icon {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  margin-right: 1rem;
+}
+
+.export-card-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.export-card-description {
+  color: #4b5563;
+  margin-bottom: 1.25rem;
+  line-height: 1.6;
+}
+
+.export-button {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.export-button:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.excel-button {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.excel-button:hover {
+  background-color: #2563eb;
+}
+
+.word-button {
+  background-color: #8b5cf6;
+  color: white;
+}
+
+.word-button:hover {
+  background-color: #7c3aed;
+}
+
+body{
+  background-color: #111827;
+}
+.app-container{
+
+background-color: #111827;
+}
+
