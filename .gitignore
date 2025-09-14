@@ -10,6 +10,9 @@
 
 # production
 /build
+/src-tauri
+yarn.lock
+package.json
 
 # misc
 .DS_Store

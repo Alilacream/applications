@@ -1,14 +1,7 @@
 import React, { useState, useRef } from "react";
 import * as XLSX from "xlsx-js-style";
 import { saveAs } from "file-saver";
-import {
-  TextRun,
-  Paragraph,
-  HeadingLevel,
-  Document,
-  Packer,
-  UnderlineType,
-} from "docx";
+
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 

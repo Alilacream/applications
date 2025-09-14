@@ -2,9 +2,9 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "WordExcelExporter",
   "version": "0.1.0",
-  "identifier": "com.tauri.dev",
+  "identifier": "con.alilacream.applications",
   "build": {
-    "frontendDist": "dist",
+    "frontendDist": "../build",
     "devUrl": "http://localhost:3000",
     "beforeDevCommand": "yarn start",
     "beforeBuildCommand": "yarn build"
