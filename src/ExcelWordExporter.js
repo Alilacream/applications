@@ -18,6 +18,8 @@ const ExcelWordExporter = () => {
     fileInputRef.current?.click();
   };
 
+  // Handles any given extra column at the beginning so we can find the first column index:
+  // N° PRIX
   const handleFileChange = (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -43,20 +45,74 @@ const ExcelWordExporter = () => {
         const workbook = XLSX.read(data, { type: "array" });
         const firstSheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[firstSheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+        // ✅ Read sheet as 2D array — with empty string fallback
+        const range = XLSX.utils.decode_range(worksheet["!ref"]);
+        const raw_data = [];
+        for (let R = range.s.r; R <= range.e.r; ++R) {
+          const row = [];
+          for (let C = range.s.c; C <= range.e.c; ++C) {
+            const cell_address = { c: C, r: R };
+            const cell_ref = XLSX.utils.encode_cell(cell_address);
+            const cell = worksheet[cell_ref];
+            row.push(cell ? cell.w || cell.v : ""); // ← Use formatted (w) or raw (v) value
+          }
+          raw_data.push(row);
+        }
+
+        // ✅ Find header row — look for "N° PRIX"
+        let headerRowIndex = -1;
+        for (let i = 0; i < raw_data.length; i++) {
+          const row = raw_data[i];
+          if (
+            Array.isArray(row) &&
+            row.some(
+              (cell) =>
+                typeof cell === "string" &&
+                cell.trim().toLowerCase().includes("n° prix")
+            )
+          ) {
+            headerRowIndex = i;
+            break;
+          }
+        }
+
+        if (headerRowIndex === -1) {
+          throw new Error(
+            "Could not detect header row. Please make sure 'N° PRIX' column exists."
+          );
+        }
+
+        // ✅ Extract headers and data rows
+        const headers = raw_data[headerRowIndex];
+        const dataRows = raw_data.slice(headerRowIndex + 1);
+
+        // ✅ Convert to array of objects
+        const jsonData = dataRows
+          .filter((row) => row && row.length > 0)
+          .map((row) => {
+            const obj = {};
+            headers.forEach((header, index) => {
+              const key = String(header || `col_${index}`).trim();
+              obj[key] = index < row.length ? row[index] : "";
+            });
+            return obj;
+          })
+          .filter((obj) =>
+            Object.values(obj).some((val) => String(val).trim() !== "")
+          );
 
         if (jsonData.length === 0) {
-          setErrorMessage("No data found in the file.");
-          setShowError(true);
-          return;
+          throw new Error("No valid data found after header row.");
         }
 
         setData(jsonData);
         setFileName(file.name);
         setShowError(false);
       } catch (error) {
+        console.error("File Read Error:", error);
         setErrorMessage(
-          "Error reading Excel file. Please make sure the file is not corrupted."
+          error.message || "Error reading Excel file. Please check format."
         );
         setShowError(true);
       }
@@ -85,7 +141,6 @@ const ExcelWordExporter = () => {
     return data.filter((_, index) => selectedRows.has(index));
   };
 
-
   // Export Excel (without description) — with sequential ID reset
   const exportExcelFile = () => {
     const selected = getSelectedData();
@@ -96,18 +151,33 @@ const ExcelWordExporter = () => {
     }
 
     try {
+      // Detect columns dynamically
       const columns = Object.keys(data[0]);
+
+      const titleCol =
+        columns.find((col) => col.toLowerCase().includes("designation")) ||
+        "DESIGNATION";
+      const unitCol =
+        columns.find((col) => col.toLowerCase().includes("unite")) || "Unité";
+      const qtyCol =
+        columns.find((col) => col.toLowerCase().includes("quantit")) ||
+        "Quantités";
+      const priceCol =
+        columns.find((col) => col.toLowerCase().includes("p.u")) || "P.U DH.HT";
+      const totalCol =
+        columns.find((col) => col.toLowerCase().includes("motant")) ||
+        "Motant total H.T";
+
       const excelData = selected.map((row, exportIndex) => {
-        const newRow = {};
-        columns.forEach((col) => {
-          if (col.trim().toLowerCase() === "id") {
-            // ✅ Override original ID with sequential number (1, 2, 3...)
-            newRow[col] = exportIndex + 1;
-          } else if (col.trim().toLowerCase() !== "description") {
-            newRow[col] = row[col];
-          }
-        });
-        return newRow;
+        return {
+          "N°Prix": exportIndex + 1, // Sequential ID for export
+          Désignation: row[titleCol] || "Sans Titre",
+          Unité: row[unitCol] || "",
+          Quantité: row[qtyCol] || 0,
+          "P.U DH.HT": row[priceCol] || 0,
+          "Montant Total HT":
+            row[totalCol] || (row[qtyCol] || 0) * (row[priceCol] || 0), // Recalculate if missing
+        };
       });
 
       const wb = XLSX.utils.book_new();
@@ -126,12 +196,7 @@ const ExcelWordExporter = () => {
     }
   };
 
-
-
-
-
-
-  // Export Excel (without description)
+  // Export Word (with description)
   const exportWordFile = async () => {
     const selected = getSelectedData();
     if (selected.length === 0) {
@@ -157,25 +222,22 @@ const ExcelWordExporter = () => {
         linebreaks: true,
       });
 
-      // Find column names dynamically
-      const descriptionColumn =
+      // Detect columns dynamically
+      const titleCol =
         Object.keys(data[0]).find((col) =>
-          col.toLowerCase().includes("description")
-        ) || "description";
+          col.toLowerCase().includes("designation")
+        ) || "DESIGNATION";
 
-      const priceColumn =
-        Object.keys(data[0]).find(
-          (col) =>
-            col.toLowerCase().includes("prix") ||
-            col.toLowerCase().includes("price")
-        ) || null;
+      const descCol =
+        Object.keys(data[0]).find((col) =>
+          col.toLowerCase().includes("descriptif")
+        ) || "descriptif";
 
-      // Prepare data with title, description, and optional price
-      const projects = selected.map((row,indexId) => ({
+      // Prepare data
+      const projects = selected.map((row, indexId) => ({
         id: indexId + 1,
-        title: row["titre de project"] || "Sans Titre",
-        description: row[descriptionColumn] || "",
-        price: priceColumn ? row[priceColumn] : null, // null = won't render price block
+        title: row[titleCol] || "Sans Titre",
+        descriptif: row[descCol] || "",
       }));
 
       // Inject data
@@ -203,6 +265,7 @@ const ExcelWordExporter = () => {
       setShowError(true);
     }
   };
+
   // where the app begins
   return (
     <div className="app-container">
@@ -298,20 +361,40 @@ const ExcelWordExporter = () => {
                 <thead>
                   <tr>
                     <th className="table-head-cell">Select</th>
-                    {Object.keys(data[0]).map((key) => (
-                      <th
-                        key={key}
-                        className={`table-head-cell ${
-                          key.toLowerCase().includes("description")
-                            ? "description-column"
-                            : ""
-                        }`}
-                      >
-                        {key}
-                      </th>
-                    ))}
+                    {Object.keys(data[0]).map((key) => {
+                      // Clean up column names for display
+                      let displayName = key;
+                      if (key.toLowerCase().includes("n° prix"))
+                        displayName = "Code";
+                      else if (key.toLowerCase().includes("designation"))
+                        displayName = "Désignation";
+                      else if (key.toLowerCase().includes("unite"))
+                        displayName = "Unité";
+                      else if (key.toLowerCase().includes("quantit"))
+                        displayName = "Qté";
+                      else if (key.toLowerCase().includes("p.u"))
+                        displayName = "P.U HT";
+                      else if (key.toLowerCase().includes("motant"))
+                        displayName = "Total HT";
+                      else if (key.toLowerCase().includes("description"))
+                        displayName = "Description (longue)";
+
+                      return (
+                        <th
+                          key={key}
+                          className={`table-head-cell ${
+                            key.toLowerCase().includes("description")
+                              ? "description-column"
+                              : ""
+                          }`}
+                        >
+                          {displayName}
+                        </th>
+                      );
+                    })}
                   </tr>
                 </thead>
+
                 <tbody>
                   {data.map((row, index) => {
                     const keys = Object.keys(row); // ← Get column names to detect "description"
