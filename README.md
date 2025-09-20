@@ -1,6 +1,53 @@
-Welcome to my application Repository, here where i encourage myself into making projects that either benefits people i know, or projects that really interests me. this project is based from a big data excel management file for enginners.
------> this big data file contains a lot of columns but the most important ones are (N° PRIX, DESIGNATION,UNITE,QUANTITES,P.U DH.HT, Total, Description). as you see the description makes a lot of space in the table making the table kinda of unreadable
-hence this project came to resolve this solution, by importing the big data table, it devides this table into two elements, excel file table containing each column but removing the description, and a word file that contains the N PRIX DESGINATION
-and the description below, making the table excel much more readable since it contains only the key words of calculation , and the word file doing it's job to contain all of the verbose description.
-Note: the coded this app in the sole purpose of helping my brother, i have vibe coded it but i don't take joy in "VIBE coding" this app, but i took my time and analysed a lot of chunk of code (exporting functions, importing functions, error handling functions, and finally html tag threading)
-this is the version 1 of the app, but i'm willing to devide the big chunk code into multiplbe compenents. wish me luck in my journy and i wish the same for every dev that have read this repo
+Application Repository
+
+Welcome to my application repository 👋.
+Here, I challenge myself to build projects that either help people I know or tackle ideas that truly interest me.
+
+Project Overview
+
+This project is inspired by a big data Excel management file for engineers.
+The original file contains many columns, but the most important ones are:
+
+N° PRIX
+
+DESIGNATION
+
+UNITE
+
+QUANTITES
+
+P.U DH.HT
+
+TOTAL
+
+DESCRIPTION
+
+The issue: the DESCRIPTION column takes up a lot of space, making the table difficult to read.
+
+The Solution
+
+This application processes the big Excel file and splits it into two outputs:
+
+Excel File → Contains all the main calculation columns (N° PRIX, DESIGNATION, UNITE, QUANTITES, P.U DH.HT, TOTAL) but without the description, making it much more compact and readable.
+
+Word File → Contains the pair (N° PRIX, DESIGNATION) followed by the DESCRIPTION, so all the verbose details are stored neatly in a separate document.
+
+This way, engineers can work easily with the Excel file for calculations while still keeping the descriptions accessible when needed.
+
+Personal Note
+
+I originally coded this application for my brother ❤️.
+I call it “vibe coding” because I started it quickly, but unlike usual vibe coding, I actually took my time analyzing and improving:
+
+Exporting/importing functions
+
+Error handling
+
+HTML tag threading
+
+This is Version 1 of the app.
+Next steps: I plan to refactor and split the big code chunk into multiple clean components.
+
+Wish me luck on my journey 🚀, and I wish the same for every developer reading this repo!
+
+Do you want me to also add a “How to Use” section (with installation steps, commands, dependencies) so that others could actually run your app?
