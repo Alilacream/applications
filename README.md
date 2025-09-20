@@ -50,4 +50,3 @@ Next steps: I plan to refactor and split the big code chunk into multiple clean 
 
 Wish me luck on my journey 🚀, and I wish the same for every developer reading this repo!
 
-Do you want me to also add a “How to Use” section (with installation steps, commands, dependencies) so that others could actually run your app?
