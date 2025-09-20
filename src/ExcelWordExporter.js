@@ -153,7 +153,13 @@ const ExcelWordExporter = () => {
     try {
       // Detect columns dynamically
       const columns = Object.keys(data[0]);
+<<<<<<< HEAD
 
+=======
+      const idCol =
+        columns.find((col) => col.toLowerCase().includes("n° prix")) ||
+        "N° PRIX";
+>>>>>>> 7fd104aade677e2c54a42f07cb490d4b153d9481
       const titleCol =
         columns.find((col) => col.toLowerCase().includes("designation")) ||
         "DESIGNATION";
