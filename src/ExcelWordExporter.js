@@ -5,6 +5,17 @@ import { saveAs } from "file-saver";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 
+// 👇 Helper function to normalize strings (remove accents, lowercase, clean spaces)
+const normalizeString = (str) => {
+  if (typeof str !== "string") return "";
+  return str
+    .normalize("NFD") // Split accented characters
+    .replace(/[\u0300-\u036f]/g, "") // Remove diacritics
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " "); // Collapse spaces
+};
+
 const ExcelWordExporter = () => {
   const [data, setData] = useState([]);
   const [selectedRows, setSelectedRows] = useState(new Set());
@@ -69,7 +80,7 @@ const ExcelWordExporter = () => {
             row.some(
               (cell) =>
                 typeof cell === "string" &&
-                cell.trim().toLowerCase().includes("n° prix")
+                normalizeString(cell).includes("n° prix")
             )
           ) {
             headerRowIndex = i;
@@ -87,13 +98,13 @@ const ExcelWordExporter = () => {
         const headers = raw_data[headerRowIndex];
         const dataRows = raw_data.slice(headerRowIndex + 1);
 
-        // ✅ Convert to array of objects
+        // ✅ Convert to array of objects — with normalized keys
         const jsonData = dataRows
           .filter((row) => row && row.length > 0)
           .map((row) => {
             const obj = {};
             headers.forEach((header, index) => {
-              const key = String(header || `col_${index}`).trim();
+              const key = normalizeString(header || `col_${index}`);
               obj[key] = index < row.length ? row[index] : "";
             });
             return obj;
@@ -141,7 +152,37 @@ const ExcelWordExporter = () => {
     return data.filter((_, index) => selectedRows.has(index));
   };
 
-  // Export Excel (without description) — with sequential ID reset
+  // 🎨 Excel Styles
+  const headerStyle = {
+    fill: { fgColor: { rgb: "1F497D" } }, // Dark blue
+    font: { color: { rgb: "FFFFFF" }, bold: true, sz: 12 },
+    alignment: { horizontal: "center", vertical: "center", wrapText: true },
+    border: {
+      top: { style: "thin", color: { rgb: "000000" } },
+      bottom: { style: "thin", color: { rgb: "000000" } },
+      left: { style: "thin", color: { rgb: "000000" } },
+      right: { style: "thin", color: { rgb: "000000" } },
+    },
+  };
+
+  const cellStyle = {
+    alignment: { horizontal: "left", vertical: "top", wrapText: true },
+    border: {
+      top: { style: "thin", color: { rgb: "D9D9D9" } },
+      bottom: { style: "thin", color: { rgb: "D9D9D9" } },
+      left: { style: "thin", color: { rgb: "D9D9D9" } },
+      right: { style: "thin", color: { rgb: "D9D9D9" } },
+    },
+    font: { sz: 11 },
+  };
+
+  const numberStyle = {
+    ...cellStyle,
+    alignment: { horizontal: "right", vertical: "top" },
+    numFmt: "#,##0.00",
+  };
+
+  // Export Excel (without description) — with sequential ID reset + STYLING
   const exportExcelFile = () => {
     const selected = getSelectedData();
     if (selected.length === 0) {
@@ -151,43 +192,94 @@ const ExcelWordExporter = () => {
     }
 
     try {
-      // Detect columns dynamically
-      const columns = Object.keys(data[0]);
-
+      // Detect columns dynamically — using normalized search
       const titleCol =
-        columns.find((col) => col.toLowerCase().includes("designation")) ||
-        "DESIGNATION";
+        Object.keys(data[0]).find((col) =>
+          normalizeString(col).includes("designation")
+        ) || "designation des ouvrages";
       const unitCol =
-        columns.find((col) => col.toLowerCase().includes("unite")) || "Unité";
+        Object.keys(data[0]).find((col) =>
+          normalizeString(col).includes("unite")
+        ) || "unite";
       const qtyCol =
-        columns.find((col) => col.toLowerCase().includes("quantit")) ||
-        "Quantités";
+        Object.keys(data[0]).find((col) =>
+          normalizeString(col).includes("quantite")
+        ) || "quantites";
       const priceCol =
-        columns.find((col) => col.toLowerCase().includes("p.u")) || "P.U DH.HT";
+        Object.keys(data[0]).find((col) =>
+          normalizeString(col).includes("p.u")
+        ) || "p.u dh.ht";
       const totalCol =
-        columns.find((col) => col.toLowerCase().includes("motant")) ||
-        "Motant total H.T";
+        Object.keys(data[0]).find((col) =>
+          normalizeString(col).includes("montant total")
+        ) || "montant total h.t";
 
-      const excelData = selected.map((row, exportIndex) => {
-        return {
-          "N°Prix": exportIndex + 1, // Sequential ID for export
-          Désignation: row[titleCol] || "Sans Titre",
-          Unité: row[unitCol] || "",
-          Quantité: row[qtyCol] || 0,
-          "P.U DH.HT": row[priceCol] || 0,
-          "Montant Total HT":
-            row[totalCol] || (row[qtyCol] || 0) * (row[priceCol] || 0), // Recalculate if missing
-        };
+      // Prepare data
+      const excelData = selected.map((row, exportIndex) => ({
+        "N°Prix": exportIndex + 1,
+        Désignation: row[titleCol] || "Sans Titre",
+        Unité: row[unitCol] || "",
+        Quantité: row[qtyCol] || 0,
+        "P.U DH.HT": row[priceCol] || 0,
+        "Montant Total HT":
+          row[totalCol] || (row[qtyCol] || 0) * (row[priceCol] || 0),
+      }));
+
+      // Create worksheet
+      const ws = XLSX.utils.json_to_sheet(excelData, { skipHeader: true });
+
+      // Define columns
+      const headers = [
+        "N°Prix",
+        "Désignation",
+        "Unité",
+        "Quantité",
+        "P.U DH.HT",
+        "Montant Total HT",
+      ];
+
+      const columns = [
+        { wch: 8 }, // N°Prix
+        { wch: 40 }, // Désignation
+        { wch: 10 }, // Unité
+        { wch: 12 }, // Quantité
+        { wch: 15 }, // P.U DH.HT
+        { wch: 18 }, // Montant Total HT
+      ];
+      ws["!cols"] = columns;
+
+      // Add styled headers
+      headers.forEach((header, colIndex) => {
+        const cellAddress = XLSX.utils.encode_cell({ r: 0, c: colIndex });
+        ws[cellAddress] = { v: header, s: headerStyle };
       });
 
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(excelData);
-      XLSX.utils.book_append_sheet(wb, ws, "Selected Projects");
+      // Style data cells
+      for (let rowIndex = 1; rowIndex <= excelData.length; rowIndex++) {
+        for (let colIndex = 0; colIndex < headers.length; colIndex++) {
+          const cellAddress = XLSX.utils.encode_cell({
+            r: rowIndex,
+            c: colIndex,
+          });
+          if (!ws[cellAddress]) continue;
 
+          if ([3, 4, 5].includes(colIndex)) {
+            // Numeric columns
+            ws[cellAddress].s = numberStyle;
+            ws[cellAddress].t = "n";
+            ws[cellAddress].v = Number(ws[cellAddress].v);
+          } else {
+            ws[cellAddress].s = cellStyle;
+          }
+        }
+      }
+
+      // Finalize and export
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Selected Projects");
       const exportFileName = fileName
         ? `export_${fileName.replace(/\.[^/.]+$/, "")}.xlsx`
         : "project_export.xlsx";
-
       XLSX.writeFile(wb, exportFileName);
     } catch (error) {
       console.error("Export Excel Error:", error);
@@ -196,7 +288,7 @@ const ExcelWordExporter = () => {
     }
   };
 
-  // Export Word (with description)
+  // Export Word (with description) — FIXED
   const exportWordFile = async () => {
     const selected = getSelectedData();
     if (selected.length === 0) {
@@ -222,24 +314,25 @@ const ExcelWordExporter = () => {
         linebreaks: true,
       });
 
-      // Detect columns dynamically
+      // 🔍 Detect columns dynamically — with normalization
       const titleCol =
         Object.keys(data[0]).find((col) =>
-          col.toLowerCase().includes("designation")
-        ) || "DESIGNATION";
+          normalizeString(col).includes("designation")
+        ) || "designation des ouvrages";
 
       const descCol =
         Object.keys(data[0]).find((col) =>
-          col.toLowerCase().includes("descriptif")
+          normalizeString(col).includes("descriptif")
         ) || "descriptif";
 
       // Prepare data
-      const projects = selected.map((row, indexId) => ({
-        id: indexId + 1,
-        title: row[titleCol] || "Sans Titre",
-        descriptif: row[descCol] || "",
-      }));
-
+      const projects = selected
+        .map((row, indexId) => ({
+          id: indexId + 1,
+          title: row[titleCol] || "Sans Titre",
+          descriptif: row[descCol] || "",
+        }))
+        .filter((project) => project.descriptif.trim() !== ""); // ← Skip if empty or only whitespace
       // Inject data
       doc.setData({ projects });
 
@@ -362,28 +455,27 @@ const ExcelWordExporter = () => {
                   <tr>
                     <th className="table-head-cell">Select</th>
                     {Object.keys(data[0]).map((key) => {
-                      // Clean up column names for display
                       let displayName = key;
-                      if (key.toLowerCase().includes("n° prix"))
+                      if (normalizeString(key).includes("n° prix"))
                         displayName = "Code";
-                      else if (key.toLowerCase().includes("designation"))
+                      else if (normalizeString(key).includes("designation"))
                         displayName = "Désignation";
-                      else if (key.toLowerCase().includes("unite"))
+                      else if (normalizeString(key).includes("unite"))
                         displayName = "Unité";
-                      else if (key.toLowerCase().includes("quantit"))
+                      else if (normalizeString(key).includes("quantit"))
                         displayName = "Qté";
-                      else if (key.toLowerCase().includes("p.u"))
+                      else if (normalizeString(key).includes("p.u"))
                         displayName = "P.U HT";
-                      else if (key.toLowerCase().includes("motant"))
+                      else if (normalizeString(key).includes("motant"))
                         displayName = "Total HT";
-                      else if (key.toLowerCase().includes("description"))
+                      else if (normalizeString(key).includes("description"))
                         displayName = "Description (longue)";
 
                       return (
                         <th
                           key={key}
                           className={`table-head-cell ${
-                            key.toLowerCase().includes("description")
+                            normalizeString(key).includes("description")
                               ? "description-column"
                               : ""
                           }`}
@@ -397,7 +489,7 @@ const ExcelWordExporter = () => {
 
                 <tbody>
                   {data.map((row, index) => {
-                    const keys = Object.keys(row); // ← Get column names to detect "description"
+                    const keys = Object.keys(row);
                     return (
                       <tr key={index} className="table-row">
                         <td className="table-cell">
@@ -412,9 +504,8 @@ const ExcelWordExporter = () => {
                           const key = keys[cellIndex];
                           let displayValue = String(value);
 
-                          // 👇 ONLY truncate if column name includes "description"
                           if (
-                            key.toLowerCase().includes("description") &&
+                            normalizeString(key).includes("description") &&
                             displayValue.length > 50
                           ) {
                             displayValue =
@@ -425,7 +516,7 @@ const ExcelWordExporter = () => {
                             <td
                               key={cellIndex}
                               className="table-cell"
-                              title={String(value)} // ← Full text still visible on hover
+                              title={String(value)}
                             >
                               {displayValue}
                             </td>
@@ -455,8 +546,8 @@ const ExcelWordExporter = () => {
                       {Object.keys(data[0])
                         .filter(
                           (col) =>
-                            !col.toLowerCase().includes("description") &&
-                            col.toLowerCase() !== "id"
+                            !normalizeString(col).includes("description") &&
+                            normalizeString(col) !== "id"
                         )
                         .map((key) => (
                           <th key={key} className="table-head-cell">
@@ -471,8 +562,8 @@ const ExcelWordExporter = () => {
                         <td className="table-cell">{index + 1}</td>
                         {Object.entries(row).map(([key, value]) => {
                           if (
-                            key.toLowerCase() === "id" ||
-                            key.toLowerCase().includes("description")
+                            normalizeString(key) === "id" ||
+                            normalizeString(key).includes("description")
                           )
                             return null;
                           return (
