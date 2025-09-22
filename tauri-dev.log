@@ -1,0 +1,27 @@
+yarn run v1.22.22
+$ /home/ali/Desktop/applications/node_modules/.bin/tauri dev
+     Running BeforeDevCommand (`yarn start`)
+$ react-scripts start
+       Error Found version mismatched Tauri packages. Make sure the NPM and crate versions are on the same major/minor releases:
+tauri (v2.8.5) : @tauri-apps/api (v1.5.2)
+        Warn Waiting for your frontend dev server to start on http://localhost:3000/...
+(node:14634) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:14634) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+Starting the development server...
+
+Compiled successfully!
+
+You can now view excelapp in the browser.
+
+  Local:            http://localhost:3000
+  On Your Network:  http://192.168.1.16:3000
+
+Note that the development build is not optimized.
+To create a production build, use yarn build.
+
+webpack compiled successfully
+     Running DevCommand (`cargo  run --no-default-features --color always --`)
+        Info Watching /home/ali/Desktop/applications/src-tauri for changes...
+[1m[32m    Finished[0m ]8;;https://doc.rust-lang.org/cargo/reference/profiles.html#default-profiles\`dev` profile [unoptimized + debuginfo]]8;;\ target(s) in 0.37s
+[1m[32m     Running[0m `target/debug/app`

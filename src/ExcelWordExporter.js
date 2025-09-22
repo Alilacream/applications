@@ -4,7 +4,41 @@ import { saveAs } from "file-saver";
 
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
+// dectects tauri app folder
+const isTauri = () => {
+  return (
+    typeof window !== "undefined" &&
+    (window["__TAURI__"] !== undefined || navigator.userAgent.includes("Tauri"))
+  );
+};
+// 👇 Universal file saver — works in browser AND Tauri
+const saveFile = async (
+  data,
+  fileName,
+  mimeType = "application/octet-stream"
+) => {
+  if (isTauri()) {
+    // Use Tauri APIs
+    const { save } = await import("@tauri-apps/api/dialog");
+    const { writeBinaryFile } = await import("@tauri-apps/api/fs");
 
+    const filePath = await save({
+      filters: [{ name: "Files", extensions: [fileName.split(".").pop()] }],
+      defaultPath: fileName,
+    });
+
+    if (!filePath) return false;
+
+    await writeBinaryFile(filePath, data);
+    return true;
+  } else {
+    // Use browser file-saver
+    const { saveAs } = await import("file-saver");
+    const blob = new Blob([data], { type: mimeType });
+    saveAs(blob, fileName);
+    return true;
+  }
+};
 // 👇 Helper function to normalize strings (remove accents, lowercase, clean spaces)
 const normalizeString = (str) => {
   if (typeof str !== "string") return "";
@@ -183,7 +217,7 @@ const ExcelWordExporter = () => {
   };
 
   // Export Excel (without description) — with sequential ID reset + STYLING
-  const exportExcelFile = () => {
+  const exportExcelFile = async () => {
     const selected = getSelectedData();
     if (selected.length === 0) {
       setErrorMessage("No rows selected. Please select at least one row.");
@@ -290,10 +324,32 @@ const ExcelWordExporter = () => {
       // Finalize and export
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Selected Projects");
+
       const exportFileName = fileName
         ? `export_${fileName.replace(/\.[^/.]+$/, "")}.xlsx`
         : "project_export.xlsx";
-      XLSX.writeFile(wb, exportFileName);
+
+      // ✅ START REPLACEMENT — Replace XLSX.writeFile with this block
+      // ✅ Generate buffer (same as before)
+      const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      const uint8Array = new Uint8Array(excelBuffer);
+
+      // ✅ Use universal saver
+      const success = await saveFile(
+        uint8Array,
+        exportFileName,
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+
+      if (!success) {
+        setErrorMessage("Export canceled by user.");
+        setShowError(true);
+        return;
+      }
+
+      alert(`✅ Excel exported successfully!`);
+
+      // ✅ END REPLACEMENT
     } catch (error) {
       console.error("Export Excel Error:", error);
       setErrorMessage("Error exporting Excel file.");
@@ -357,13 +413,23 @@ const ExcelWordExporter = () => {
         mimeType:
           "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       });
+      const wordFileName = fileName
+        ? `descriptions_${fileName.replace(/\.[^/.]+$/, "")}.docx`
+        : "project_descriptions.docx";
 
-      saveAs(
-        blob,
-        fileName
-          ? `descriptions_${fileName.replace(/\.[^/.]+$/, "")}.docx`
-          : "project_descriptions.docx"
+      const success = await saveFile(
+        await blob.arrayBuffer(),
+        wordFileName,
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
       );
+
+      if (!success) {
+        setErrorMessage("Export canceled by user.");
+        setShowError(true);
+        return;
+      }
+
+      alert(`✅ Word document exported successfully!`);
     } catch (error) {
       console.error("🚨 docxtemplater Error:", error);
       setErrorMessage(`Export failed: ${error.message || "Unknown error"}`);
