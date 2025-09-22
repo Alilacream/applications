@@ -154,8 +154,8 @@ const ExcelWordExporter = () => {
 
   // 🎨 Excel Styles
   const headerStyle = {
-    fill: { fgColor: { rgb: "1F497D" } }, // Dark blue
-    font: { color: { rgb: "FFFFFF" }, bold: true, sz: 12 },
+    fill: { fgColor: { rgb: "43A047" } }, // Dark blue
+    font: { color: { rgb: "000000" }, bold: true, sz: 15 },
     alignment: { horizontal: "center", vertical: "center", wrapText: true },
     border: {
       top: { style: "thin", color: { rgb: "000000" } },
@@ -193,37 +193,50 @@ const ExcelWordExporter = () => {
 
     try {
       // Detect columns dynamically — using normalized search
+      const parseNumber = (value) => {
+        const num = parseFloat(value);
+        return !isNaN(num) ? num : 0;
+      };
+      const nPrixCol =
+        Object.keys(data[0]).find((col) =>
+          normalizeString(col).includes("n° prix")
+        ) || normalizeString("N° Prix");
       const titleCol =
         Object.keys(data[0]).find((col) =>
           normalizeString(col).includes("designation")
-        ) || "designation des ouvrages";
+        ) || normalizeString("designation des ouvrages");
       const unitCol =
         Object.keys(data[0]).find((col) =>
           normalizeString(col).includes("unite")
-        ) || "unite";
+        ) || normalizeString("unite");
       const qtyCol =
         Object.keys(data[0]).find((col) =>
           normalizeString(col).includes("quantite")
-        ) || "quantites";
+        ) || normalizeString("quantites");
       const priceCol =
         Object.keys(data[0]).find((col) =>
           normalizeString(col).includes("p.u")
-        ) || "p.u dh.ht";
+        ) || normalizeString("p.u dh.ht");
       const totalCol =
         Object.keys(data[0]).find((col) =>
-          normalizeString(col).includes("montant total")
-        ) || "montant total h.t";
+          normalizeString(col).includes("montant total h.t")
+        ) || normalizeString("Montant total H.T");
 
       // Prepare data
-      const excelData = selected.map((row, exportIndex) => ({
-        "N°Prix": exportIndex + 1,
-        Désignation: row[titleCol] || "Sans Titre",
-        Unité: row[unitCol] || "",
-        Quantité: row[qtyCol] || 0,
-        "P.U DH.HT": row[priceCol] || 0,
-        "Montant Total HT":
-          row[totalCol] || (row[qtyCol] || 0) * (row[priceCol] || 0),
-      }));
+      const excelData = selected.map((row) => {
+        const qty = parseNumber(row[qtyCol]);
+        const price = parseNumber(row[priceCol]);
+        const totalFromSource = parseNumber(row[totalCol]);
+
+        return {
+          "N°Prix": row[nPrixCol] || "", // ← PRESERVE ORIGINAL VALUE (A, a, 1, 2, B, etc.)
+          Désignation: row[titleCol] || "Sans Titre",
+          Unité: row[unitCol] || "",
+          Quantité: qty,
+          "P.U DH.HT": price,
+          "Montant Total HT": totalFromSource || qty * price,
+        };
+      });
 
       // Create worksheet
       const ws = XLSX.utils.json_to_sheet(excelData, { skipHeader: true });
@@ -326,13 +339,12 @@ const ExcelWordExporter = () => {
         ) || "descriptif";
 
       // Prepare data
-      const projects = selected
-        .map((row, indexId) => ({
-          id: indexId + 1,
-          title: row[titleCol] || "Sans Titre",
-          descriptif: row[descCol] || "",
-        }))
-        .filter((project) => project.descriptif.trim() !== ""); // ← Skip if empty or only whitespace
+      const projects = selected.map((row, indexId) => ({
+        id: indexId + 1,
+        title: row[titleCol] || "Sans Titre",
+        descriptif: row[descCol] || "",
+      }));
+      //.filter((project) => project.descriptif.trim() !== ""); // ← Skip if empty or only whitespace
       // Inject data
       doc.setData({ projects });
 
