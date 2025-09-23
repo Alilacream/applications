@@ -8,7 +8,8 @@ import Docxtemplater from "docxtemplater";
 const isTauri = () => {
   return (
     typeof window !== "undefined" &&
-    (window["__TAURI__"] !== undefined || navigator.userAgent.includes("Tauri"))
+    "__TAURI__" in window &&
+    typeof window.__TAURI__ !== "undefined"
   );
 };
 // 👇 Universal file saver — works in browser AND Tauri
@@ -18,27 +19,59 @@ const saveFile = async (
   mimeType = "application/octet-stream"
 ) => {
   if (isTauri()) {
-    // Use Tauri APIs
-    const { save } = await import("@tauri-apps/api/dialog");
-    const { writeBinaryFile } = await import("@tauri-apps/api/fs");
+    console.log("🚀 Tauri detected — using native dialog...");
 
-    const filePath = await save({
-      filters: [{ name: "Files", extensions: [fileName.split(".").pop()] }],
-      defaultPath: fileName,
-    });
+    try {
+      const { save } = await import("@tauri-apps/api/dialog");
+      const { writeBinaryFile } = await import("@tauri-apps/api/fs");
+      const { open } = await import("@tauri-apps/api/shell");
+      const { dirname } = await import("@tauri-apps/api/path");
 
-    if (!filePath) return false;
+      // Show that dialog is about to open
+      console.log("📂 Opening save dialog...");
 
-    await writeBinaryFile(filePath, data);
-    return true;
+      const filePath = await save({
+        filters: [
+          {
+            name: fileName.includes(".xlsx")
+              ? "Excel File"
+              : fileName.includes(".docx")
+              ? "Word Document"
+              : "File",
+            extensions: [fileName.split(".").pop()],
+          },
+        ],
+        defaultPath: fileName,
+      });
+
+      if (!filePath) {
+        console.log("❌ User canceled save dialog");
+        alert("Export canceled.");
+        return false;
+      }
+
+      console.log(`✅ Saving file to: ${filePath}`);
+      await writeBinaryFile(filePath, data);
+
+      const folderPath = await dirname(filePath);
+      console.log(`📂 Opening folder: ${folderPath}`);
+      await open(folderPath);
+
+      return true;
+    } catch (err) {
+      console.error("🚨 Tauri save dialog ERROR:", err);
+      alert(`Export failed: ${err.message}`);
+      return false;
+    }
   } else {
-    // Use browser file-saver
+    console.log("🌐 Browser detected — using file-saver download...");
     const { saveAs } = await import("file-saver");
     const blob = new Blob([data], { type: mimeType });
     saveAs(blob, fileName);
     return true;
   }
 };
+
 // 👇 Helper function to normalize strings (remove accents, lowercase, clean spaces)
 const normalizeString = (str) => {
   if (typeof str !== "string") return "";
