@@ -221,8 +221,8 @@ const ExcelWordExporter = () => {
 
   // 🎨 Excel Styles
   const headerStyle = {
-    fill: { fgColor: { rgb: "1F497D" } }, // Dark blue
-    font: { color: { rgb: "FFFFFF" }, bold: true, sz: 12 },
+    fill: { fgColor: { rgb: "1f7d41ff" } }, // Dark blue
+    font: { color: { rgb: "FFFFFF" }, bold: true, sz: 15 },
     alignment: { horizontal: "center", vertical: "center", wrapText: true },
     border: {
       top: { style: "thin", color: { rgb: "000000" } },
@@ -286,14 +286,14 @@ const ExcelWordExporter = () => {
         "N°Prix": exportIndex + 1,
         Désignation: row[titleCol] || "Sans Titre",
         Unité: row[unitCol] || "",
-        Quantité: row[qtyCol] || 0,
-        "P.U DH.HT": row[priceCol] || 0,
+        Quantité: parseFloat(row[qtyCol] || 0),
+        "P.U DH.HT": parseFloat(row[priceCol] || 0),
         "Montant Total HT":
-          row[totalCol] || (row[qtyCol] || 0) * (row[priceCol] || 0),
+          (parseFloat(row[qtyCol]) || 0) * (parseFloat(row[priceCol]) || 0),
       }));
 
-      // Create worksheet
-      const ws = XLSX.utils.json_to_sheet(excelData, { skipHeader: true });
+      // ✅ FIXED: Remove skipHeader: true
+      const ws = XLSX.utils.json_to_sheet(excelData); // ← NO skipHeader
 
       // Define columns
       const headers = [
@@ -315,13 +315,13 @@ const ExcelWordExporter = () => {
       ];
       ws["!cols"] = columns;
 
-      // Add styled headers
+      // Add styled headers (this now overwrites the auto-generated headers, which is safe)
       headers.forEach((header, colIndex) => {
         const cellAddress = XLSX.utils.encode_cell({ r: 0, c: colIndex });
         ws[cellAddress] = { v: header, s: headerStyle };
       });
 
-      // Style data cells
+      // Style data cells (now starts at row 1, which is correct)
       for (let rowIndex = 1; rowIndex <= excelData.length; rowIndex++) {
         for (let colIndex = 0; colIndex < headers.length; colIndex++) {
           const cellAddress = XLSX.utils.encode_cell({
@@ -349,12 +349,9 @@ const ExcelWordExporter = () => {
         ? `export_${fileName.replace(/\.[^/.]+$/, "")}.xlsx`
         : "project_export.xlsx";
 
-      // ✅ START REPLACEMENT — Replace XLSX.writeFile with this block
-      // ✅ Generate buffer (same as before)
       const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
       const uint8Array = new Uint8Array(excelBuffer);
 
-      // ✅ Use universal saver
       const success = await saveFile(
         uint8Array,
         exportFileName,
@@ -368,8 +365,6 @@ const ExcelWordExporter = () => {
       }
 
       alert(`✅ Excel exported successfully!`);
-
-      // ✅ END REPLACEMENT
     } catch (error) {
       console.error("Export Excel Error:", error);
       setErrorMessage("Error exporting Excel file.");
